@@ -22,4 +22,5 @@
 To update team members:
 
 Just edit the names.txt file and reload the extension. No code changes needed!
-The modal is designed to be unobtrusive during screen sharing - it's compact, draggable, and has a clean professional look. Perfect for standups!
+The modal is designed to be unobtrusive during screen sharing - it's compact,
+draggable, and has a clean professional look. Perfect for standups!

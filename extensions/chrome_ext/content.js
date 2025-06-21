@@ -43,8 +43,8 @@ function createModal(names) {
       </div>
       <div class="standup-list">
         ${names
-          .map(
-            (name, index) => `
+      .map(
+        (name, index) => `
           <div class="standup-item" data-name="${name}">
             <span class="standup-number">${index + 1}</span>
             <label class="standup-checkbox-container">
@@ -53,8 +53,8 @@ function createModal(names) {
             </label>
           </div>
         `,
-          )
-          .join("")}
+      )
+      .join("")}
       </div>
       <div class="standup-footer">
         <span class="standup-count">${names.length} team members</span>
@@ -67,8 +67,9 @@ function createModal(names) {
 
 // Show the modal
 async function showModal() {
-  if (standupModal) {
-    // standupModal.style.display = "flex";
+  console.log("standup modal: ", standupModal);
+  if (standupModal && standupModal.style.display == "none") {
+    standupModal.style.display = "block";
     return;
   }
 
@@ -128,6 +129,27 @@ function setupModalEventListeners() {
 
   // Setup checkbox listeners
   setupCheckboxListeners();
+
+  // Make modal focusable and handle focus/blur for transparency
+  standupModal.setAttribute("tabindex", "-1");
+
+  // Add click listener to focus modal when clicked
+  standupModal.addEventListener("click", () => {
+    standupModal.focus();
+  });
+
+  // Make modal opaque when focused
+  standupModal.addEventListener("focus", () => {
+    standupModal.style.opacity = "1";
+  });
+
+  // Make modal semi-transparent when focus is lost
+  standupModal.addEventListener("blur", () => {
+    standupModal.style.opacity = "0.6";
+  });
+
+  // Initial focus to start with full opacity
+  standupModal.focus();
 }
 
 // Setup checkbox event listeners

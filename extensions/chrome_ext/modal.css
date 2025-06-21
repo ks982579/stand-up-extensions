@@ -13,6 +13,8 @@
   animation: modalSlideIn 0.3s ease-out;
   font-family:
     -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  transition: opacity 0.3s ease;
+  outline: none;
 }
 
 @keyframes modalSlideIn {
