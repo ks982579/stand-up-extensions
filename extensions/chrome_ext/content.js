@@ -128,11 +128,17 @@ function setupModalEventListeners() {
   // Setup checkbox listeners
   setupCheckboxListeners();
 
-  // Close modal when clicking outside
+  // Remove background tint when clicking outside (but keep modal visible)
   standupModal.addEventListener("click", (e) => {
     if (e.target === standupModal) {
-      hideModal();
+      standupModal.style.backgroundColor = "transparent";
     }
+  });
+
+  // Restore background tint when clicking on modal content
+  standupModal.querySelector(".standup-modal-content").addEventListener("click", (e) => {
+    e.stopPropagation();
+    standupModal.style.backgroundColor = "rgba(0, 0, 0, 0.4)";
   });
 }
 
