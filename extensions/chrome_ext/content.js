@@ -1,3 +1,4 @@
+// Container of modal appended to bottom of document body
 let standupModal = null;
 let namesData = [];
 let completedNames = new Set();
@@ -32,33 +33,31 @@ function shuffleArray(array) {
 // Create the modal HTML
 function createModal(names) {
   const modalHTML = `
-    <div id="standupModal" class="standup-modal">
-      <div class="standup-modal-content">
-        <div class="standup-header">
-          <h2>🎲 Standup Order</h2>
-          <div class="standup-controls">
-            <button id="reshuffleBtn" class="standup-btn secondary">🔄 Reshuffle</button>
-            <button id="closeModalBtn" class="standup-btn close">✕</button>
+    <div id="standupModal" class="standup-modal-content">
+      <div class="standup-header">
+        <h2>🎲 Standup Order</h2>
+        <div class="standup-controls">
+          <button id="reshuffleBtn" class="standup-btn secondary">🔄 Reshuffle</button>
+          <button id="closeModalBtn" class="standup-btn close">✕</button>
+        </div>
+      </div>
+      <div class="standup-list">
+        ${names
+          .map(
+            (name, index) => `
+          <div class="standup-item" data-name="${name}">
+            <span class="standup-number">${index + 1}</span>
+            <label class="standup-checkbox-container">
+              <input type="checkbox" class="standup-checkbox" data-name="${name}">
+              <span class="standup-name">${name}</span>
+            </label>
           </div>
-        </div>
-        <div class="standup-list">
-          ${names
-      .map(
-        (name, index) => `
-            <div class="standup-item" data-name="${name}">
-              <span class="standup-number">${index + 1}</span>
-              <label class="standup-checkbox-container">
-                <input type="checkbox" class="standup-checkbox" data-name="${name}">
-                <span class="standup-name">${name}</span>
-              </label>
-            </div>
-          `,
-      )
-      .join("")}
-        </div>
-        <div class="standup-footer">
-          <span class="standup-count">${names.length} team members</span>
-        </div>
+        `,
+          )
+          .join("")}
+      </div>
+      <div class="standup-footer">
+        <span class="standup-count">${names.length} team members</span>
       </div>
     </div>
   `;
@@ -69,7 +68,7 @@ function createModal(names) {
 // Show the modal
 async function showModal() {
   if (standupModal) {
-    standupModal.style.display = "flex";
+    // standupModal.style.display = "flex";
     return;
   }
 
@@ -77,6 +76,8 @@ async function showModal() {
   const shuffledNames = shuffleArray(names);
 
   // Create modal element
+  // This roundabout process is most efficient way creating complex DOM
+  // elements from HTML templates string in vanilla JS
   const modalDiv = document.createElement("div");
   modalDiv.innerHTML = createModal(shuffledNames);
   standupModal = modalDiv.firstElementChild;
@@ -87,7 +88,7 @@ async function showModal() {
   setupModalEventListeners();
 
   // Make modal draggable
-  makeDraggable(standupModal.querySelector(".standup-modal-content"));
+  makeDraggable(standupModal);
 }
 
 // Setup event listeners for the modal
@@ -127,19 +128,6 @@ function setupModalEventListeners() {
 
   // Setup checkbox listeners
   setupCheckboxListeners();
-
-  // Remove background tint when clicking outside (but keep modal visible)
-  standupModal.addEventListener("click", (e) => {
-    if (e.target === standupModal) {
-      standupModal.style.backgroundColor = "transparent";
-    }
-  });
-
-  // Restore background tint when clicking on modal content
-  standupModal.querySelector(".standup-modal-content").addEventListener("click", (e) => {
-    e.stopPropagation();
-    standupModal.style.backgroundColor = "rgba(0, 0, 0, 0.4)";
-  });
 }
 
 // Setup checkbox event listeners
@@ -175,11 +163,6 @@ function makeDraggable(element) {
     pos3 = 0,
     pos4 = 0;
   const header = element.querySelector(".standup-header");
-
-  // Set initial position
-  element.style.position = "fixed";
-  element.style.top = "20px";
-  element.style.left = "20px";
 
   header.onmousedown = dragMouseDown;
 
