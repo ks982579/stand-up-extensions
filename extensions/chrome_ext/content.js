@@ -1,7 +1,9 @@
 // Container of modal appended to bottom of document body
 let standupModal = null;
+let parkingLotModal = null;
 let namesData = [];
 let completedNames = new Set();
+let parkingLotItems = [];
 
 // Load names from file
 async function loadNames() {
@@ -58,10 +60,50 @@ function createModal(names) {
       </div>
       <div class="standup-footer">
         <span class="standup-count">${names.length} team members</span>
+        <button id="parkingLotBtn" class="standup-btn parking-lot">🚗 View Parking Lot</button>
       </div>
     </div>
   `;
 
+  return modalHTML;
+}
+
+// Create the parking lot modal HTML
+function createParkingLotModal() {
+  const modalHTML = `
+    <div id="parkingLotModal" class="standup-modal-content parking-lot-modal">
+      <div class="standup-header">
+        <h2>🚗 Parking Lot</h2>
+        <div class="standup-controls">
+          <button id="closeParkingLotBtn" class="standup-btn close">✕</button>
+        </div>
+      </div>
+      <div class="parking-lot-content">
+        <div id="parkingLotList" class="standup-list">
+          ${parkingLotItems.length === 0 ? 
+            '<div class="empty-parking-lot">No parking lot items yet</div>' :
+            parkingLotItems.map((item, index) => `
+              <div class="standup-item parking-lot-item" data-item="${item}">
+                <span class="standup-number">${index + 1}</span>
+                <span class="standup-name">${item}</span>
+                <button class="remove-item-btn" data-item="${item}">🗑️</button>
+              </div>
+            `).join('')
+          }
+        </div>
+        <div class="parking-lot-add-section">
+          <button id="addParkingLotBtn" class="standup-btn add-item">+ Add Parking Lot Item</button>
+          <div id="addItemForm" class="add-item-form" style="display: none;">
+            <input type="text" id="parkingLotInput" placeholder="Enter parking lot item..." maxlength="100">
+            <div class="form-buttons">
+              <button id="saveItemBtn" class="standup-btn primary">Save</button>
+              <button id="cancelItemBtn" class="standup-btn secondary">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
   return modalHTML;
 }
 
@@ -130,12 +172,23 @@ function setupModalEventListeners() {
   // Setup checkbox listeners
   setupCheckboxListeners();
 
+  // Parking lot button
+  standupModal
+    .querySelector("#parkingLotBtn")
+    .addEventListener("click", (e) => {
+      e.stopPropagation(); // Prevent standup modal from stealing focus back
+      showParkingLotModal();
+    });
+
   // Make modal focusable and handle focus/blur for transparency
   standupModal.setAttribute("tabindex", "-1");
 
   // Add click listener to focus modal when clicked
-  standupModal.addEventListener("click", () => {
-    standupModal.focus();
+  standupModal.addEventListener("click", (e) => {
+    // Don't steal focus from interactive elements
+    if (!e.target.matches('input, button, textarea, select')) {
+      standupModal.focus();
+    }
   });
 
   // Make modal opaque when focused
@@ -144,8 +197,13 @@ function setupModalEventListeners() {
   });
 
   // Make modal semi-transparent when focus is lost
-  standupModal.addEventListener("blur", () => {
-    standupModal.style.opacity = "0.6";
+  standupModal.addEventListener("blur", (e) => {
+    // Only make transparent if focus moved completely outside the modal
+    setTimeout(() => {
+      if (!standupModal.contains(document.activeElement)) {
+        standupModal.style.opacity = "0.6";
+      }
+    }, 0);
   });
 
   // Initial focus to start with full opacity
@@ -176,6 +234,152 @@ function hideModal() {
   if (standupModal) {
     standupModal.style.display = "none";
   }
+}
+
+// Show parking lot modal
+function showParkingLotModal() {
+  if (parkingLotModal) {
+    parkingLotModal.style.display = "block";
+    // Ensure standup modal becomes semi-transparent immediately
+    standupModal.style.opacity = "0.6";
+    parkingLotModal.style.opacity = "1";
+    parkingLotModal.focus();
+    return;
+  }
+
+  // Create parking lot modal
+  const modalDiv = document.createElement("div");
+  modalDiv.innerHTML = createParkingLotModal();
+  parkingLotModal = modalDiv.firstElementChild;
+
+  // Position it offset from the standup modal
+  parkingLotModal.style.top = "20px";
+  parkingLotModal.style.left = "390px"; // 350px width + 20px gap + 20px original left
+
+  document.body.appendChild(parkingLotModal);
+
+  // Setup parking lot event listeners
+  setupParkingLotEventListeners();
+
+  // Make parking lot modal focusable and draggable
+  parkingLotModal.setAttribute('tabindex', '-1');
+  parkingLotModal.addEventListener('click', (e) => {
+    // Don't steal focus from interactive elements
+    if (!e.target.matches('input, button, textarea, select')) {
+      parkingLotModal.focus();
+    }
+  });
+  parkingLotModal.addEventListener('focus', () => {
+    parkingLotModal.style.opacity = '1';
+  });
+  parkingLotModal.addEventListener('blur', (e) => {
+    // Only make transparent if focus moved completely outside the modal
+    setTimeout(() => {
+      if (!parkingLotModal.contains(document.activeElement)) {
+        parkingLotModal.style.opacity = '0.6';
+      }
+    }, 0);
+  });
+
+  makeDraggable(parkingLotModal);
+  
+  // Ensure standup modal becomes semi-transparent immediately
+  standupModal.style.opacity = "0.6";
+  parkingLotModal.focus();
+}
+
+// Hide parking lot modal
+function hideParkingLotModal() {
+  if (parkingLotModal) {
+    parkingLotModal.style.display = "none";
+  }
+}
+
+// Setup parking lot modal event listeners
+function setupParkingLotEventListeners() {
+  // Close button
+  parkingLotModal
+    .querySelector("#closeParkingLotBtn")
+    .addEventListener("click", hideParkingLotModal);
+
+  // Add item button
+  parkingLotModal
+    .querySelector("#addParkingLotBtn")
+    .addEventListener("click", () => {
+      document.getElementById("addItemForm").style.display = "block";
+      document.getElementById("addParkingLotBtn").style.display = "none";
+      document.getElementById("parkingLotInput").focus();
+    });
+
+  // Save button
+  parkingLotModal
+    .querySelector("#saveItemBtn")
+    .addEventListener("click", saveParkingLotItem);
+
+  // Cancel button
+  parkingLotModal
+    .querySelector("#cancelItemBtn")
+    .addEventListener("click", cancelAddItem);
+
+  // Enter key in input
+  parkingLotModal
+    .querySelector("#parkingLotInput")
+    .addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        saveParkingLotItem();
+      }
+    });
+
+  // Setup remove item listeners
+  setupRemoveItemListeners();
+}
+
+// Save parking lot item
+function saveParkingLotItem() {
+  const input = document.getElementById("parkingLotInput");
+  const value = input.value.trim();
+  
+  if (value && !parkingLotItems.includes(value)) {
+    parkingLotItems.push(value);
+    refreshParkingLotList();
+  }
+  
+  cancelAddItem();
+}
+
+// Cancel add item
+function cancelAddItem() {
+  document.getElementById("addItemForm").style.display = "none";
+  document.getElementById("addParkingLotBtn").style.display = "block";
+  document.getElementById("parkingLotInput").value = "";
+}
+
+// Refresh parking lot list
+function refreshParkingLotList() {
+  const listContainer = parkingLotModal.querySelector("#parkingLotList");
+  listContainer.innerHTML = parkingLotItems.length === 0 ? 
+    '<div class="empty-parking-lot">No parking lot items yet</div>' :
+    parkingLotItems.map((item, index) => `
+      <div class="standup-item parking-lot-item" data-item="${item}">
+        <span class="standup-number">${index + 1}</span>
+        <span class="standup-name">${item}</span>
+        <button class="remove-item-btn" data-item="${item}">🗑️</button>
+      </div>
+    `).join('');
+  
+  setupRemoveItemListeners();
+}
+
+// Setup remove item listeners
+function setupRemoveItemListeners() {
+  const removeButtons = parkingLotModal.querySelectorAll(".remove-item-btn");
+  removeButtons.forEach(button => {
+    button.addEventListener("click", (e) => {
+      const item = e.target.dataset.item;
+      parkingLotItems = parkingLotItems.filter(i => i !== item);
+      refreshParkingLotList();
+    });
+  });
 }
 
 // Make element draggable with boundary constraints
