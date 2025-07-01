@@ -54,6 +54,7 @@ function createModal(names) {
               <input type="checkbox" class="standup-checkbox" data-name="${name}">
               <span class="standup-name">${name}</span>
             </label>
+            <button class="parking-lot-car-btn" data-name="${name}" title="Add ${name} to parking lot">🚗</button>
           </div>
         `,
       )
@@ -161,6 +162,7 @@ function setupModalEventListeners() {
           <input type="checkbox" class="standup-checkbox" data-name="${name}">
           <span class="standup-name">${name}</span>
         </label>
+        <button class="parking-lot-car-btn" data-name="${name}" title="Add ${name} to parking lot">🚗</button>
       </div>
     `,
         )
@@ -168,10 +170,15 @@ function setupModalEventListeners() {
 
       // Re-attach checkbox listeners
       setupCheckboxListeners();
+      // Re-attach car button listeners
+      setupCarButtonListeners();
     });
 
   // Setup checkbox listeners
   setupCheckboxListeners();
+
+  // Setup car button listeners
+  setupCarButtonListeners();
 
   // Parking lot button
   standupModal
@@ -246,6 +253,39 @@ function setupCheckboxListeners() {
   });
 }
 
+// Setup car button event listeners
+function setupCarButtonListeners() {
+  const carButtons = standupModal.querySelectorAll(".parking-lot-car-btn");
+  carButtons.forEach((button) => {
+    button.addEventListener("click", (e) => {
+      e.stopPropagation(); // Prevent modal focus changes
+      const name = e.target.dataset.name;
+      
+      // Add to parking lot if not already there
+      if (!parkingLotItems.includes(name)) {
+        parkingLotItems.push(name);
+        
+        // Add visual confirmation animation
+        button.classList.add("car-clicked");
+        setTimeout(() => {
+          button.classList.remove("car-clicked");
+        }, 600);
+        
+        // Update parking lot modal if it's open
+        if (parkingLotModal && parkingLotModal.style.display !== "none") {
+          refreshParkingLotList();
+        }
+      } else {
+        // Already in parking lot - show different animation
+        button.classList.add("car-already-added");
+        setTimeout(() => {
+          button.classList.remove("car-already-added");
+        }, 400);
+      }
+    });
+  });
+}
+
 // Hide the modal
 function hideModal() {
   if (standupModal) {
@@ -257,6 +297,8 @@ function hideModal() {
 function showParkingLotModal() {
   if (parkingLotModal) {
     parkingLotModal.style.display = "block";
+    // Refresh the parking lot list to show any newly added items
+    refreshParkingLotList();
     // Ensure standup modal becomes semi-transparent immediately
     standupModal.style.opacity = "0.6";
     parkingLotModal.style.opacity = "1";
