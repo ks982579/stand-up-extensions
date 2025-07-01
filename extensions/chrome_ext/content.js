@@ -4,6 +4,7 @@ let parkingLotModal = null;
 let namesData = [];
 let completedNames = new Set();
 let parkingLotItems = [];
+let globalClickListenerAdded = false;
 
 // Load names from file
 async function loadNames() {
@@ -191,9 +192,20 @@ function setupModalEventListeners() {
     }
   });
 
+  // Add click listener to header to expand modal when collapsed
+  const header = standupModal.querySelector(".standup-header");
+  header.addEventListener("click", (e) => {
+    // Only expand if clicking on header itself or title, not buttons
+    if (e.target.matches('.standup-header, .standup-header h2, .standup-header h2 *')) {
+      standupModal.focus();
+      expandModal();
+    }
+  });
+
   // Make modal opaque when focused
   standupModal.addEventListener("focus", () => {
     standupModal.style.opacity = "1";
+    expandModal();
   });
 
   // Make modal semi-transparent when focus is lost
@@ -202,9 +214,14 @@ function setupModalEventListeners() {
     setTimeout(() => {
       if (!standupModal.contains(document.activeElement)) {
         standupModal.style.opacity = "0.6";
+        collapseModal();
       }
     }, 0);
   });
+
+
+  // Setup global click listener once
+  setupGlobalClickListener();
 
   // Initial focus to start with full opacity
   standupModal.focus();
@@ -435,6 +452,56 @@ function makeDraggable(element) {
     document.onmouseup = null;
     document.onmousemove = null;
   }
+}
+
+// Collapse modal (hide list and footer)
+function collapseModal() {
+  if (standupModal) {
+    const list = standupModal.querySelector(".standup-list");
+    const footer = standupModal.querySelector(".standup-footer");
+    if (list) list.style.display = "none";
+    if (footer) footer.style.display = "none";
+    standupModal.classList.add("collapsed");
+  }
+}
+
+// Expand modal (show list and footer)
+function expandModal() {
+  if (standupModal) {
+    const list = standupModal.querySelector(".standup-list");
+    const footer = standupModal.querySelector(".standup-footer");
+    if (list) list.style.display = "block";
+    if (footer) footer.style.display = "block";
+    standupModal.classList.remove("collapsed");
+  }
+}
+
+// Setup global click listener to handle clicks outside modals
+function setupGlobalClickListener() {
+  if (globalClickListenerAdded) return;
+  
+  document.addEventListener("click", (e) => {
+    // Check if click is outside both modals
+    const clickedOutsideStandup = standupModal && !standupModal.contains(e.target);
+    const clickedOutsideParkingLot = !parkingLotModal || !parkingLotModal.contains(e.target);
+    
+    // If clicked outside standup modal, collapse it
+    if (clickedOutsideStandup && clickedOutsideParkingLot) {
+      standupModal.style.opacity = "0.6";
+      collapseModal();
+    }
+    
+    // If clicked outside parking lot modal but inside standup, focus standup
+    if (clickedOutsideParkingLot && !clickedOutsideStandup) {
+      if (parkingLotModal && parkingLotModal.style.display !== "none") {
+        standupModal.style.opacity = "1";
+        expandModal();
+        standupModal.focus();
+      }
+    }
+  });
+  
+  globalClickListenerAdded = true;
 }
 
 // Listen for messages from popup

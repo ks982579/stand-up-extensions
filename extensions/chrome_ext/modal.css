@@ -37,6 +37,15 @@
   align-items: center;
   cursor: move;
   user-select: none;
+  transition: background 0.2s ease;
+}
+
+.standup-modal-content.collapsed .standup-header {
+  cursor: pointer;
+}
+
+.standup-modal-content.collapsed .standup-header:hover {
+  background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
 }
 
 .standup-header h2 {
@@ -79,6 +88,7 @@
   max-height: 400px;
   overflow-y: auto;
   padding: 0;
+  transition: all 0.3s ease;
 }
 
 .standup-item {
@@ -144,6 +154,7 @@
   padding: 12px 20px;
   border-top: 1px solid #e9ecef;
   text-align: center;
+  transition: all 0.3s ease;
 }
 
 .standup-count {
