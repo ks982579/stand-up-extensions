@@ -7,7 +7,7 @@
 📝 External names file - Edit names.txt to add/remove team members
 🔄 Reshuffle button - Generate a new random order anytime
 🎨 Draggable modal - Drag it around the screen so it doesn't block your Jira board
-💾 Persistent - Modal stays open even when switching between tabs/windows
+🚗 Parking Lot - Adding others to a Parking Lot is easy with the button
 
 ## How to use:
 
