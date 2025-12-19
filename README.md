@@ -1,5 +1,7 @@
 # Stand-Up Extensions
 
+> v0.4.0
+
 ## Features:
 
 🎲 Randomized order - Names are shuffled each time you show the modal
