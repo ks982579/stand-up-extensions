@@ -12,6 +12,14 @@ Sections: `[ Added, Changed, Fixed, Removed]`
 
 ---
 
+## [0.4.2] - 2025-12-19
+
+### Fixed
+- Copy the `chrome.storage.local` to the sync-storage, and vice-versa, when toggling to maintain only one list of names.
+- Fix to modal to reference correct storage location
+
+---
+
 ## [0.4.1] - 2025-12-19
 
 ### Added

@@ -25,11 +25,24 @@ nameInput.addEventListener('keypress', (e) => {
 // Handle sync toggle changes
 syncToggle.addEventListener('change', async () => {
   const enabled = syncToggle.checked;
+
+  // Get names from the current (old) storage before switching
+  const currentNames = await StorageAdapter.get(['teamNames']);
+  const names = currentNames.teamNames || [];
+
+  // Switch to the new storage mode
   await StorageAdapter.setSyncEnabled(enabled);
+
+  // Copy names to the new storage mode
+  await StorageAdapter.set({ teamNames: names });
+
+  // Reload the display to show the names
+  await loadNames();
+
   showStatus(
     enabled
-      ? 'Chrome Sync enabled - names will sync across devices'
-      : 'Chrome Sync disabled - names stored locally only',
+      ? 'Chrome Sync enabled - names copied and will sync across devices'
+      : 'Chrome Sync disabled - names copied to local storage only',
     'success'
   );
 });

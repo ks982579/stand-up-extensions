@@ -104,15 +104,56 @@ function createParkingLotModal() {
   return modalHTML;
 }
 
+// Update modal content with new names
+function updateModalContent(shuffledNames) {
+  completedNames.clear(); // Reset completed status
+
+  // Update list container
+  const listContainer = standupModal.querySelector(".standup-list");
+  listContainer.innerHTML = shuffledNames.length === 0 ? `
+    <div class="empty-state">
+      <p>No team members yet!</p>
+      <p>Right-click the extension icon and select "Options" to add team members.</p>
+    </div>
+  ` : shuffledNames
+    .map(
+      (name, index) => `
+    <div class="standup-item" data-name="${name}">
+      <span class="standup-number">${index + 1}</span>
+      <label class="standup-checkbox-container">
+        <input type="checkbox" class="standup-checkbox" data-name="${name}">
+        <span class="standup-name">${name}</span>
+      </label>
+      <button class="parking-lot-car-btn" data-name="${name}" title="Add ${name} to parking lot">🚗</button>
+    </div>
+  `,
+    )
+    .join("");
+
+  // Update footer count
+  const countElement = standupModal.querySelector(".standup-count");
+  countElement.textContent = `${shuffledNames.length} team members`;
+
+  // Re-attach event listeners
+  setupCheckboxListeners();
+  setupCarButtonListeners();
+}
+
 // Show the modal
 async function showModal() {
   console.log("standup modal: ", standupModal);
+
+  // Always reload names to pick up changes from options or storage mode switches
+  const names = await loadNames();
+
   if (standupModal && standupModal.style.display == "none") {
+    // Modal exists but is hidden - update the names and show it
+    const shuffledNames = shuffleArray(names);
+    updateModalContent(shuffledNames);
     standupModal.style.display = "block";
     return;
   }
 
-  const names = await loadNames();
   const shuffledNames = shuffleArray(names);
 
   // Create modal element
@@ -144,29 +185,7 @@ function setupModalEventListeners() {
     .addEventListener("click", async () => {
       const names = await loadNames();
       const shuffledNames = shuffleArray(names);
-      completedNames.clear(); // Reset completed status
-
-      // Update modal content
-      const listContainer = standupModal.querySelector(".standup-list");
-      listContainer.innerHTML = shuffledNames
-        .map(
-          (name, index) => `
-      <div class="standup-item" data-name="${name}">
-        <span class="standup-number">${index + 1}</span>
-        <label class="standup-checkbox-container">
-          <input type="checkbox" class="standup-checkbox" data-name="${name}">
-          <span class="standup-name">${name}</span>
-        </label>
-        <button class="parking-lot-car-btn" data-name="${name}" title="Add ${name} to parking lot">🚗</button>
-      </div>
-    `,
-        )
-        .join("");
-
-      // Re-attach checkbox listeners
-      setupCheckboxListeners();
-      // Re-attach car button listeners
-      setupCarButtonListeners();
+      updateModalContent(shuffledNames);
     });
 
   // Setup checkbox listeners
