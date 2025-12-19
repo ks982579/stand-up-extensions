@@ -12,28 +12,22 @@ Sections: `[ Added, Changed, Fixed, Removed]`
 
 ---
 
-## [0.4.0] - 2025-12-19
+## [0.4.1] - 2025-12-19
 
 ### Added
-- **Settings/Options Page**: New dedicated settings page for managing team members
-  - Add and remove team members through a user-friendly interface
-  - Duplicate name detection
-  - Real-time validation and feedback
-  - Access via right-click extension icon → "Options"
-- **Chrome Storage Integration**: Team names now stored in `chrome.storage.sync`
-  - Syncs across all devices where you're signed into Chrome
-  - No need to manually edit files
-  - Persistent storage between sessions
-- **Empty State Handling**: Helpful instructions when no team members are configured
+- **Storage Mode Toggle**: Can now choose between local storage and Chrome Sync
+  - Toggle switch in Options page under "Storage Settings"
+  - Defaults to local storage (device-only)
+  - Optional sync mode syncs across all Chrome devices when signed in
 
 ### Changed
-- Replaced file-based storage (`names.txt`) with Chrome's sync storage API
-- Improved first-run experience with better onboarding
+- Default storage changed from Chrome Sync to local storage
+- Storage preference is device-specific
 
 ### Technical
-- Added `options_page` to manifest
-- Implemented `chrome.storage.sync` API for cross-device synchronization
-- Added migration logic for existing users
+- Added `storage-adapter.js` with injector pattern for storage abstraction
+- Implemented `StorageAdapter` to switch between `chrome.storage.local` and `chrome.storage.sync`
+- Added storage preference UI in options page
 
 ---
 
@@ -58,7 +52,6 @@ Sections: `[ Added, Changed, Fixed, Removed]`
 ### Technical
 - Added `options_page` to manifest
 - Implemented `chrome.storage.sync` API for cross-device synchronization
-- Added migration logic for existing users
 
 ---
 

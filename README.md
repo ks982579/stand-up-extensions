@@ -1,39 +1,53 @@
 # Stand-Up Extensions
 
-> v0.4.0
+> v0.4.1
 
 ## Features:
 
 🎲 Randomized order - Names are shuffled each time you show the modal
 ✅ Checkboxes - Click to mark people as done (they get grayed out and crossed out)
-📝 External names file - Edit names.txt to add/remove team members
+⚙️ Settings page - Easy UI to add/remove team members
 🔄 Reshuffle button - Generate a new random order anytime
 🎨 Draggable modal - Drag it around the screen so it doesn't block your Jira board
 🚗 Parking Lot - Adding others to a Parking Lot is easy with the button
+☁️ Storage options - Choose between local-only or cloud-synced storage
 
 ## How to use:
 
-1. Install the extension (load unpacked folder)
-2. Edit names.txt with your actual team member names (one per line)
-3. On your Jira page, click the extension icon
-4. Click "Show Standup Modal"
-5. The modal appears with randomized names - drag it to a good spot
-6. Check off people as they finish their standup updates
-7. Click "Reshuffle" for a new random order anytime
+### First-time Setup:
+1. Install the extension (load unpacked folder in `chrome://extensions/`)
+2. Right-click the extension icon → Select "Options"
+3. Add your team member names using the settings page
+4. (Optional) Toggle "Enable Chrome Sync" if you want names to sync across devices
 
-To update team members:
+### Daily Standup:
+1. On any web page, click the extension icon
+2. Click "Show Standup Modal"
+3. The modal appears with randomized names - drag it to a good spot
+4. Check off people as they finish their standup updates
+5. Click "Reshuffle" for a new random order anytime
+6. Use the 🚗 button to add items to the Parking Lot
 
-Just edit the names.txt file and reload the extension. No code changes needed!
+### Managing Team Members:
+Right-click the extension icon → "Options" to add or remove team members.
 The modal is designed to be unobtrusive during screen sharing - it's compact,
 draggable, and has a clean professional look. Perfect for standups!
 
 ## Data Storage:
 
-This extension uses a storage adapter that can switch between Chrome's local storage and sync-storage.
-It defaults to local storage.
-Toggling to sync storage allows data to be used on multiple devices where you are logged in.
-Note, sync-storage has a 10KB limit, probably fine for text names, and local storage has up to 10MB. 
-If you are not signed into a Chrome browser, sync-storage will default to local storage regardless. 
+Team names are stored using Chrome's storage API with two options:
+
+**Local Storage (Default)**
+- Stored only on this device
+- 10MB storage limit
+- Works whether you're signed into Chrome or not
+
+**Chrome Sync (Optional)**
+- Syncs across all devices where you're signed into Chrome
+- 100KB storage limit (plenty for team names)
+- Falls back to local storage if not signed in
+
+Toggle between storage modes in the Options page under "Storage Settings". 
 
 ## Attributes:
 
