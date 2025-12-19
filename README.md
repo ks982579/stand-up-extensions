@@ -27,6 +27,14 @@ Just edit the names.txt file and reload the extension. No code changes needed!
 The modal is designed to be unobtrusive during screen sharing - it's compact,
 draggable, and has a clean professional look. Perfect for standups!
 
+## Data Storage:
+
+This extension uses a storage adapter that can switch between Chrome's local storage and sync-storage.
+It defaults to local storage.
+Toggling to sync storage allows data to be used on multiple devices where you are logged in.
+Note, sync-storage has a 10KB limit, probably fine for text names, and local storage has up to 10MB. 
+If you are not signed into a Chrome browser, sync-storage will default to local storage regardless. 
+
 ## Attributes:
 
 The icon was created with [HotPot.AI](https://hotpot.ai/ai-image-generator/create) free AI Image Generator using the icon style.

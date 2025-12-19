@@ -4,9 +4,13 @@ const addButton = document.getElementById('addButton');
 const namesList = document.getElementById('namesList');
 const nameCount = document.getElementById('nameCount');
 const statusMessage = document.getElementById('statusMessage');
+const syncToggle = document.getElementById('syncToggle');
 
 // Load and display names when page opens
-document.addEventListener('DOMContentLoaded', loadNames);
+document.addEventListener('DOMContentLoaded', () => {
+  loadSyncSetting();
+  loadNames();
+});
 
 // Add name on button click
 addButton.addEventListener('click', addName);
@@ -18,12 +22,29 @@ nameInput.addEventListener('keypress', (e) => {
   }
 });
 
+// Handle sync toggle changes
+syncToggle.addEventListener('change', async () => {
+  const enabled = syncToggle.checked;
+  await StorageAdapter.setSyncEnabled(enabled);
+  showStatus(
+    enabled
+      ? 'Chrome Sync enabled - names will sync across devices'
+      : 'Chrome Sync disabled - names stored locally only',
+    'success'
+  );
+});
+
+// Load sync setting
+async function loadSyncSetting() {
+  const enabled = await StorageAdapter.getSyncEnabled();
+  syncToggle.checked = enabled;
+}
+
 // Load names from storage
-function loadNames() {
-  chrome.storage.sync.get(['teamNames'], (result) => {
-    const names = result.teamNames || [];
-    displayNames(names);
-  });
+async function loadNames() {
+  const result = await StorageAdapter.get(['teamNames']);
+  const names = result.teamNames || [];
+  displayNames(names);
 }
 
 // Display names in the list
@@ -60,7 +81,7 @@ function displayNames(names) {
 }
 
 // Add a new name
-function addName() {
+async function addName() {
   const name = nameInput.value.trim();
 
   if (!name) {
@@ -68,51 +89,39 @@ function addName() {
     return;
   }
 
-  chrome.storage.sync.get(['teamNames'], (result) => {
-    const names = result.teamNames || [];
+  const result = await StorageAdapter.get(['teamNames']);
+  const names = result.teamNames || [];
 
-    // Check for duplicates
-    if (names.includes(name)) {
-      showStatus('This name already exists', 'error');
-      return;
-    }
+  // Check for duplicates
+  if (names.includes(name)) {
+    showStatus('This name already exists', 'error');
+    return;
+  }
 
-    // Add the new name
-    names.push(name);
+  // Add the new name
+  names.push(name);
 
-    // Save to storage
-    chrome.storage.sync.set({ teamNames: names }, () => {
-      if (chrome.runtime.lastError) {
-        showStatus('Error saving name: ' + chrome.runtime.lastError.message, 'error');
-        return;
-      }
+  // Save to storage
+  await StorageAdapter.set({ teamNames: names });
 
-      nameInput.value = '';
-      displayNames(names);
-      showStatus('Name added successfully!', 'success');
-      nameInput.focus();
-    });
-  });
+  nameInput.value = '';
+  displayNames(names);
+  showStatus('Name added successfully!', 'success');
+  nameInput.focus();
 }
 
 // Remove a name
-function removeName(index) {
-  chrome.storage.sync.get(['teamNames'], (result) => {
-    const names = result.teamNames || [];
-    const removedName = names[index];
+async function removeName(index) {
+  const result = await StorageAdapter.get(['teamNames']);
+  const names = result.teamNames || [];
+  const removedName = names[index];
 
-    names.splice(index, 1);
+  names.splice(index, 1);
 
-    chrome.storage.sync.set({ teamNames: names }, () => {
-      if (chrome.runtime.lastError) {
-        showStatus('Error removing name: ' + chrome.runtime.lastError.message, 'error');
-        return;
-      }
+  await StorageAdapter.set({ teamNames: names });
 
-      displayNames(names);
-      showStatus(`Removed "${removedName}"`, 'success');
-    });
-  });
+  displayNames(names);
+  showStatus(`Removed "${removedName}"`, 'success');
 }
 
 // Show status message

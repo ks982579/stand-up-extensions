@@ -8,52 +8,9 @@ let globalClickListenerAdded = false;
 
 // Load names from chrome storage
 async function loadNames() {
-  return new Promise((resolve) => {
-    chrome.storage.sync.get(['teamNames', 'migrated'], async (result) => {
-      // If already migrated or has names in storage, use those
-      if (result.migrated || (result.teamNames && result.teamNames.length > 0)) {
-        namesData = result.teamNames || [];
-        resolve(namesData);
-        return;
-      }
-
-      // First-time migration: try to load from names.txt
-      try {
-        const response = await fetch(chrome.runtime.getURL("names.txt"));
-        const text = await response.text();
-        const names = text
-          .split("\n")
-          .map((name) => name.trim())
-          .filter((name) => name.length > 0);
-
-        // Only migrate if we found actual names (not the default template)
-        const templateNames = ["Fill in own names", "separated with new lines", "John Doe", "Jane Doe", "Gavin Doe"];
-        const isTemplate = names.every(name => templateNames.includes(name));
-
-        if (names.length > 0 && !isTemplate) {
-          // Migrate names to storage
-          chrome.storage.sync.set({ teamNames: names, migrated: true }, () => {
-            console.log('Migrated names from names.txt to chrome.storage.sync');
-            namesData = names;
-            resolve(namesData);
-          });
-        } else {
-          // No valid names to migrate, mark as migrated with empty array
-          chrome.storage.sync.set({ teamNames: [], migrated: true }, () => {
-            namesData = [];
-            resolve(namesData);
-          });
-        }
-      } catch (error) {
-        console.log("No names.txt found or error reading it, starting fresh");
-        // Mark as migrated with empty array
-        chrome.storage.sync.set({ teamNames: [], migrated: true }, () => {
-          namesData = [];
-          resolve(namesData);
-        });
-      }
-    });
-  });
+  const result = await StorageAdapter.get(['teamNames']);
+  namesData = result.teamNames || [];
+  return namesData;
 }
 
 // Shuffle array using Fisher-Yates algorithm
