@@ -234,6 +234,23 @@
   font-style: italic;
 }
 
+.empty-state {
+  padding: 30px 20px;
+  text-align: center;
+  color: #6c757d;
+}
+
+.empty-state p {
+  margin: 8px 0;
+  line-height: 1.5;
+}
+
+.empty-state p:first-child {
+  font-weight: 600;
+  color: #495057;
+  font-size: 16px;
+}
+
 .parking-lot-add-section {
   padding: 16px 20px;
   background-color: #f8f9fa;

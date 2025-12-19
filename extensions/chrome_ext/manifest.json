@@ -15,6 +15,7 @@
     "default_popup": "popup.html",
     "default_title": "Standup Randomizer"
   },
+  "options_page": "options.html",
   "web_accessible_resources": [
     {
       "resources": ["names.txt"],
