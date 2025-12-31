@@ -12,6 +12,31 @@ Sections: `[ Added, Changed, Fixed, Removed]`
 
 ---
 
+## [0.4.3] - 2025-12-31
+
+### Fixed
+- Fixed "Identifier has already been declared" syntax errors when scripts were re-injected
+- Fixed duplicate modal creation when clicking "Show Modal" multiple times
+- Wrapped variable declarations to prevent redeclaration errors on script re-injection
+
+### Changed
+- **State Persistence**: Shuffle order and checkbox states now persist when closing/reopening modal
+  - Random order remains the same until explicitly clicking "Reshuffle"
+  - Checked-off team members stay checked when modal is reopened
+  - Only the "Reshuffle" button resets the order and checkboxes
+- Improved modal state management for better user experience during standup sessions
+- **Permissions**: Updated manifest permissions for better security and simpler publishing
+  - Added `scripting` permission (required for content script injection)
+  - Removed `all_urls` host permission to avoid "Host Permission" requirements during Chrome Web Store submission
+
+### Technical
+- Added `currentShuffledOrder` variable to track shuffle state
+- Modified `showModal()` to preserve existing shuffle order
+- Updated `updateModalContent()` to restore checkbox states
+- Added conditional variable declarations using `typeof` checks in content.js and storage-adapter.js
+
+---
+
 ## [0.4.2] - 2025-12-19
 
 ### Fixed

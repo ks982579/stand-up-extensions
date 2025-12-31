@@ -7,6 +7,7 @@ if (typeof standupModal === 'undefined') {
     var completedNames = new Set();
     var parkingLotItems = [];
     var globalClickListenerAdded = false;
+    var currentShuffledOrder = []; // Stores the current shuffled order
 }
 
 // Load names from chrome storage
@@ -109,8 +110,6 @@ function createParkingLotModal() {
 
 // Update modal content with new names
 function updateModalContent(shuffledNames) {
-    completedNames.clear(); // Reset completed status
-
     // Update list container
     const listContainer = standupModal.querySelector(".standup-list");
     listContainer.innerHTML = shuffledNames.length === 0 ? `
@@ -121,10 +120,10 @@ function updateModalContent(shuffledNames) {
   ` : shuffledNames
         .map(
             (name, index) => `
-    <div class="standup-item" data-name="${name}">
+    <div class="standup-item" data-name="${name}" ${completedNames.has(name) ? 'class="completed"' : ''}>
       <span class="standup-number">${index + 1}</span>
       <label class="standup-checkbox-container">
-        <input type="checkbox" class="standup-checkbox" data-name="${name}">
+        <input type="checkbox" class="standup-checkbox" data-name="${name}" ${completedNames.has(name) ? 'checked' : ''}>
         <span class="standup-name">${name}</span>
       </label>
       <button class="parking-lot-car-btn" data-name="${name}" title="Add ${name} to parking lot">🚗</button>
@@ -149,20 +148,24 @@ async function showModal() {
 
     // If modal already exists (whether visible or hidden), just update and show it
     if (standupModal) {
-        const shuffledNames = shuffleArray(names);
-        updateModalContent(shuffledNames);
+        // Use current shuffled order if it exists, otherwise shuffle
+        if (currentShuffledOrder.length === 0) {
+            currentShuffledOrder = shuffleArray(names);
+        }
+        updateModalContent(currentShuffledOrder);
         standupModal.style.display = "block";
         standupModal.focus();
         return;
     }
 
-    const shuffledNames = shuffleArray(names);
+    // First time showing modal - shuffle the names
+    currentShuffledOrder = shuffleArray(names);
 
     // Create modal element
     // This roundabout process is most efficient way creating complex DOM
     // elements from HTML templates string in vanilla JS
     const modalDiv = document.createElement("div");
-    modalDiv.innerHTML = createModal(shuffledNames);
+    modalDiv.innerHTML = createModal(currentShuffledOrder);
     standupModal = modalDiv.firstElementChild;
 
     document.body.appendChild(standupModal);
@@ -186,8 +189,10 @@ function setupModalEventListeners() {
         .querySelector("#reshuffleBtn")
         .addEventListener("click", async () => {
             const names = await loadNames();
-            const shuffledNames = shuffleArray(names);
-            updateModalContent(shuffledNames);
+            // Create new shuffled order and reset completed status
+            currentShuffledOrder = shuffleArray(names);
+            completedNames.clear();
+            updateModalContent(currentShuffledOrder);
         });
 
     // Setup checkbox listeners
