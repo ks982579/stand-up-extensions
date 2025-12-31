@@ -1,31 +1,34 @@
 // Container of modal appended to bottom of document body
-let standupModal = null;
-let parkingLotModal = null;
-let namesData = [];
-let completedNames = new Set();
-let parkingLotItems = [];
-let globalClickListenerAdded = false;
+// Only declare variables if they don't already exist (prevents redeclaration errors)
+if (typeof standupModal === 'undefined') {
+    var standupModal = null;
+    var parkingLotModal = null;
+    var namesData = [];
+    var completedNames = new Set();
+    var parkingLotItems = [];
+    var globalClickListenerAdded = false;
+}
 
 // Load names from chrome storage
 async function loadNames() {
-  const result = await StorageAdapter.get(['teamNames']);
-  namesData = result.teamNames || [];
-  return namesData;
+    const result = await StorageAdapter.get(['teamNames']);
+    namesData = result.teamNames || [];
+    return namesData;
 }
 
 // Shuffle array using Fisher-Yates algorithm
 function shuffleArray(array) {
-  const shuffled = [...array];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-  return shuffled;
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
 }
 
 // Create the modal HTML
 function createModal(names) {
-  const modalHTML = `
+    const modalHTML = `
     <div id="standupModal" class="standup-modal-content">
       <div class="standup-header">
         <h2>🎲 Standup Order</h2>
@@ -41,8 +44,8 @@ function createModal(names) {
             <p>Right-click the extension icon and select "Options" to add team members.</p>
           </div>
         ` : names
-      .map(
-        (name, index) => `
+            .map(
+                (name, index) => `
           <div class="standup-item" data-name="${name}">
             <span class="standup-number">${index + 1}</span>
             <label class="standup-checkbox-container">
@@ -52,8 +55,8 @@ function createModal(names) {
             <button class="parking-lot-car-btn" data-name="${name}" title="Add ${name} to parking lot">🚗</button>
           </div>
         `,
-      )
-      .join("")}
+            )
+            .join("")}
       </div>
       <div class="standup-footer">
         <span class="standup-count">${names.length} team members</span>
@@ -62,12 +65,12 @@ function createModal(names) {
     </div>
   `;
 
-  return modalHTML;
+    return modalHTML;
 }
 
 // Create the parking lot modal HTML
 function createParkingLotModal() {
-  const modalHTML = `
+    const modalHTML = `
     <div id="parkingLotModal" class="standup-modal-content parking-lot-modal">
       <div class="standup-header">
         <h2>🚗 Parking Lot</h2>
@@ -77,7 +80,7 @@ function createParkingLotModal() {
       </div>
       <div class="parking-lot-content">
         <div id="parkingLotList" class="standup-list">
-          ${parkingLotItems.length === 0 ? 
+          ${parkingLotItems.length === 0 ?
             '<div class="empty-parking-lot">No parking lot items yet</div>' :
             parkingLotItems.map((item, index) => `
               <div class="standup-item parking-lot-item" data-item="${item}">
@@ -86,7 +89,7 @@ function createParkingLotModal() {
                 <button class="remove-item-btn" data-item="${item}">🗑️</button>
               </div>
             `).join('')
-          }
+        }
         </div>
         <div class="parking-lot-add-section">
           <button id="addParkingLotBtn" class="standup-btn add-item">+ Add Parking Lot Item</button>
@@ -101,23 +104,23 @@ function createParkingLotModal() {
       </div>
     </div>
   `;
-  return modalHTML;
+    return modalHTML;
 }
 
 // Update modal content with new names
 function updateModalContent(shuffledNames) {
-  completedNames.clear(); // Reset completed status
+    completedNames.clear(); // Reset completed status
 
-  // Update list container
-  const listContainer = standupModal.querySelector(".standup-list");
-  listContainer.innerHTML = shuffledNames.length === 0 ? `
+    // Update list container
+    const listContainer = standupModal.querySelector(".standup-list");
+    listContainer.innerHTML = shuffledNames.length === 0 ? `
     <div class="empty-state">
       <p>No team members yet!</p>
       <p>Right-click the extension icon and select "Options" to add team members.</p>
     </div>
   ` : shuffledNames
-    .map(
-      (name, index) => `
+        .map(
+            (name, index) => `
     <div class="standup-item" data-name="${name}">
       <span class="standup-number">${index + 1}</span>
       <label class="standup-checkbox-container">
@@ -127,444 +130,443 @@ function updateModalContent(shuffledNames) {
       <button class="parking-lot-car-btn" data-name="${name}" title="Add ${name} to parking lot">🚗</button>
     </div>
   `,
-    )
-    .join("");
+        )
+        .join("");
 
-  // Update footer count
-  const countElement = standupModal.querySelector(".standup-count");
-  countElement.textContent = `${shuffledNames.length} team members`;
+    // Update footer count
+    const countElement = standupModal.querySelector(".standup-count");
+    countElement.textContent = `${shuffledNames.length} team members`;
 
-  // Re-attach event listeners
-  setupCheckboxListeners();
-  setupCarButtonListeners();
+    // Re-attach event listeners
+    setupCheckboxListeners();
+    setupCarButtonListeners();
 }
 
 // Show the modal
 async function showModal() {
-  console.log("standup modal: ", standupModal);
+    // Always reload names to pick up changes from options or storage mode switches
+    const names = await loadNames();
 
-  // Always reload names to pick up changes from options or storage mode switches
-  const names = await loadNames();
+    // If modal already exists (whether visible or hidden), just update and show it
+    if (standupModal) {
+        const shuffledNames = shuffleArray(names);
+        updateModalContent(shuffledNames);
+        standupModal.style.display = "block";
+        standupModal.focus();
+        return;
+    }
 
-  if (standupModal && standupModal.style.display == "none") {
-    // Modal exists but is hidden - update the names and show it
     const shuffledNames = shuffleArray(names);
-    updateModalContent(shuffledNames);
-    standupModal.style.display = "block";
-    return;
-  }
 
-  const shuffledNames = shuffleArray(names);
+    // Create modal element
+    // This roundabout process is most efficient way creating complex DOM
+    // elements from HTML templates string in vanilla JS
+    const modalDiv = document.createElement("div");
+    modalDiv.innerHTML = createModal(shuffledNames);
+    standupModal = modalDiv.firstElementChild;
 
-  // Create modal element
-  // This roundabout process is most efficient way creating complex DOM
-  // elements from HTML templates string in vanilla JS
-  const modalDiv = document.createElement("div");
-  modalDiv.innerHTML = createModal(shuffledNames);
-  standupModal = modalDiv.firstElementChild;
+    document.body.appendChild(standupModal);
 
-  document.body.appendChild(standupModal);
+    // Add event listeners
+    setupModalEventListeners();
 
-  // Add event listeners
-  setupModalEventListeners();
-
-  // Make modal draggable
-  makeDraggable(standupModal);
+    // Make modal draggable
+    makeDraggable(standupModal);
 }
 
 // Setup event listeners for the modal
 function setupModalEventListeners() {
-  // Close button
-  standupModal
-    .querySelector("#closeModalBtn")
-    .addEventListener("click", hideModal);
+    // Close button
+    standupModal
+        .querySelector("#closeModalBtn")
+        .addEventListener("click", hideModal);
 
-  // Reshuffle button
-  standupModal
-    .querySelector("#reshuffleBtn")
-    .addEventListener("click", async () => {
-      const names = await loadNames();
-      const shuffledNames = shuffleArray(names);
-      updateModalContent(shuffledNames);
+    // Reshuffle button
+    standupModal
+        .querySelector("#reshuffleBtn")
+        .addEventListener("click", async () => {
+            const names = await loadNames();
+            const shuffledNames = shuffleArray(names);
+            updateModalContent(shuffledNames);
+        });
+
+    // Setup checkbox listeners
+    setupCheckboxListeners();
+
+    // Setup car button listeners
+    setupCarButtonListeners();
+
+    // Parking lot button
+    standupModal
+        .querySelector("#parkingLotBtn")
+        .addEventListener("click", (e) => {
+            e.stopPropagation(); // Prevent standup modal from stealing focus back
+            showParkingLotModal();
+        });
+
+    // Make modal focusable and handle focus/blur for transparency
+    standupModal.setAttribute("tabindex", "-1");
+
+    // Add click listener to focus modal when clicked
+    standupModal.addEventListener("click", (e) => {
+        // Don't steal focus from interactive elements
+        if (!e.target.matches('input, button, textarea, select')) {
+            standupModal.focus();
+        }
     });
 
-  // Setup checkbox listeners
-  setupCheckboxListeners();
-
-  // Setup car button listeners
-  setupCarButtonListeners();
-
-  // Parking lot button
-  standupModal
-    .querySelector("#parkingLotBtn")
-    .addEventListener("click", (e) => {
-      e.stopPropagation(); // Prevent standup modal from stealing focus back
-      showParkingLotModal();
+    // Add click listener to header to expand modal when collapsed
+    const header = standupModal.querySelector(".standup-header");
+    header.addEventListener("click", (e) => {
+        // Only expand if clicking on header itself or title, not buttons
+        if (e.target.matches('.standup-header, .standup-header h2, .standup-header h2 *')) {
+            standupModal.focus();
+            expandModal();
+        }
     });
 
-  // Make modal focusable and handle focus/blur for transparency
-  standupModal.setAttribute("tabindex", "-1");
+    // Make modal opaque when focused
+    standupModal.addEventListener("focus", () => {
+        standupModal.style.opacity = "1";
+        expandModal();
+    });
 
-  // Add click listener to focus modal when clicked
-  standupModal.addEventListener("click", (e) => {
-    // Don't steal focus from interactive elements
-    if (!e.target.matches('input, button, textarea, select')) {
-      standupModal.focus();
-    }
-  });
-
-  // Add click listener to header to expand modal when collapsed
-  const header = standupModal.querySelector(".standup-header");
-  header.addEventListener("click", (e) => {
-    // Only expand if clicking on header itself or title, not buttons
-    if (e.target.matches('.standup-header, .standup-header h2, .standup-header h2 *')) {
-      standupModal.focus();
-      expandModal();
-    }
-  });
-
-  // Make modal opaque when focused
-  standupModal.addEventListener("focus", () => {
-    standupModal.style.opacity = "1";
-    expandModal();
-  });
-
-  // Make modal semi-transparent when focus is lost
-  standupModal.addEventListener("blur", (e) => {
-    // Only make transparent if focus moved completely outside the modal
-    setTimeout(() => {
-      if (!standupModal.contains(document.activeElement)) {
-        standupModal.style.opacity = "0.6";
-        collapseModal();
-      }
-    }, 0);
-  });
+    // Make modal semi-transparent when focus is lost
+    standupModal.addEventListener("blur", (e) => {
+        // Only make transparent if focus moved completely outside the modal
+        setTimeout(() => {
+            if (!standupModal.contains(document.activeElement)) {
+                standupModal.style.opacity = "0.6";
+                collapseModal();
+            }
+        }, 0);
+    });
 
 
-  // Setup global click listener once
-  setupGlobalClickListener();
+    // Setup global click listener once
+    setupGlobalClickListener();
 
-  // Initial focus to start with full opacity
-  standupModal.focus();
+    // Initial focus to start with full opacity
+    standupModal.focus();
 }
 
 // Setup checkbox event listeners
 function setupCheckboxListeners() {
-  const checkboxes = standupModal.querySelectorAll(".standup-checkbox");
-  checkboxes.forEach((checkbox) => {
-    checkbox.addEventListener("change", (e) => {
-      const name = e.target.dataset.name;
-      const item = standupModal.querySelector(`[data-name="${name}"]`);
+    const checkboxes = standupModal.querySelectorAll(".standup-checkbox");
+    checkboxes.forEach((checkbox) => {
+        checkbox.addEventListener("change", (e) => {
+            const name = e.target.dataset.name;
+            const item = standupModal.querySelector(`[data-name="${name}"]`);
 
-      if (e.target.checked) {
-        completedNames.add(name);
-        item.classList.add("completed");
-      } else {
-        completedNames.delete(name);
-        item.classList.remove("completed");
-      }
+            if (e.target.checked) {
+                completedNames.add(name);
+                item.classList.add("completed");
+            } else {
+                completedNames.delete(name);
+                item.classList.remove("completed");
+            }
+        });
     });
-  });
 }
 
 // Setup car button event listeners
 function setupCarButtonListeners() {
-  const carButtons = standupModal.querySelectorAll(".parking-lot-car-btn");
-  carButtons.forEach((button) => {
-    button.addEventListener("click", (e) => {
-      e.stopPropagation(); // Prevent modal focus changes
-      const name = e.target.dataset.name;
-      
-      // Add to parking lot if not already there
-      if (!parkingLotItems.includes(name)) {
-        parkingLotItems.push(name);
-        
-        // Add visual confirmation animation
-        button.classList.add("car-clicked");
-        setTimeout(() => {
-          button.classList.remove("car-clicked");
-        }, 600);
-        
-        // Update parking lot modal if it's open
-        if (parkingLotModal && parkingLotModal.style.display !== "none") {
-          refreshParkingLotList();
-        }
-      } else {
-        // Already in parking lot - show different animation
-        button.classList.add("car-already-added");
-        setTimeout(() => {
-          button.classList.remove("car-already-added");
-        }, 400);
-      }
+    const carButtons = standupModal.querySelectorAll(".parking-lot-car-btn");
+    carButtons.forEach((button) => {
+        button.addEventListener("click", (e) => {
+            e.stopPropagation(); // Prevent modal focus changes
+            const name = e.target.dataset.name;
+
+            // Add to parking lot if not already there
+            if (!parkingLotItems.includes(name)) {
+                parkingLotItems.push(name);
+
+                // Add visual confirmation animation
+                button.classList.add("car-clicked");
+                setTimeout(() => {
+                    button.classList.remove("car-clicked");
+                }, 600);
+
+                // Update parking lot modal if it's open
+                if (parkingLotModal && parkingLotModal.style.display !== "none") {
+                    refreshParkingLotList();
+                }
+            } else {
+                // Already in parking lot - show different animation
+                button.classList.add("car-already-added");
+                setTimeout(() => {
+                    button.classList.remove("car-already-added");
+                }, 400);
+            }
+        });
     });
-  });
 }
 
 // Hide the modal
 function hideModal() {
-  if (standupModal) {
-    standupModal.style.display = "none";
-  }
+    if (standupModal) {
+        standupModal.style.display = "none";
+    }
 }
 
 // Show parking lot modal
 function showParkingLotModal() {
-  if (parkingLotModal) {
-    parkingLotModal.style.display = "block";
-    // Refresh the parking lot list to show any newly added items
-    refreshParkingLotList();
+    if (parkingLotModal) {
+        parkingLotModal.style.display = "block";
+        // Refresh the parking lot list to show any newly added items
+        refreshParkingLotList();
+        // Ensure standup modal becomes semi-transparent immediately
+        standupModal.style.opacity = "0.6";
+        parkingLotModal.style.opacity = "1";
+        parkingLotModal.focus();
+        return;
+    }
+
+    // Create parking lot modal
+    const modalDiv = document.createElement("div");
+    modalDiv.innerHTML = createParkingLotModal();
+    parkingLotModal = modalDiv.firstElementChild;
+
+    // Position it offset from the standup modal
+    parkingLotModal.style.top = "20px";
+    parkingLotModal.style.left = "390px"; // 350px width + 20px gap + 20px original left
+
+    document.body.appendChild(parkingLotModal);
+
+    // Setup parking lot event listeners
+    setupParkingLotEventListeners();
+
+    // Make parking lot modal focusable and draggable
+    parkingLotModal.setAttribute('tabindex', '-1');
+    parkingLotModal.addEventListener('click', (e) => {
+        // Don't steal focus from interactive elements
+        if (!e.target.matches('input, button, textarea, select')) {
+            parkingLotModal.focus();
+        }
+    });
+    parkingLotModal.addEventListener('focus', () => {
+        parkingLotModal.style.opacity = '1';
+    });
+    parkingLotModal.addEventListener('blur', (e) => {
+        // Only make transparent if focus moved completely outside the modal
+        setTimeout(() => {
+            if (!parkingLotModal.contains(document.activeElement)) {
+                parkingLotModal.style.opacity = '0.6';
+            }
+        }, 0);
+    });
+
+    makeDraggable(parkingLotModal);
+
     // Ensure standup modal becomes semi-transparent immediately
     standupModal.style.opacity = "0.6";
-    parkingLotModal.style.opacity = "1";
     parkingLotModal.focus();
-    return;
-  }
-
-  // Create parking lot modal
-  const modalDiv = document.createElement("div");
-  modalDiv.innerHTML = createParkingLotModal();
-  parkingLotModal = modalDiv.firstElementChild;
-
-  // Position it offset from the standup modal
-  parkingLotModal.style.top = "20px";
-  parkingLotModal.style.left = "390px"; // 350px width + 20px gap + 20px original left
-
-  document.body.appendChild(parkingLotModal);
-
-  // Setup parking lot event listeners
-  setupParkingLotEventListeners();
-
-  // Make parking lot modal focusable and draggable
-  parkingLotModal.setAttribute('tabindex', '-1');
-  parkingLotModal.addEventListener('click', (e) => {
-    // Don't steal focus from interactive elements
-    if (!e.target.matches('input, button, textarea, select')) {
-      parkingLotModal.focus();
-    }
-  });
-  parkingLotModal.addEventListener('focus', () => {
-    parkingLotModal.style.opacity = '1';
-  });
-  parkingLotModal.addEventListener('blur', (e) => {
-    // Only make transparent if focus moved completely outside the modal
-    setTimeout(() => {
-      if (!parkingLotModal.contains(document.activeElement)) {
-        parkingLotModal.style.opacity = '0.6';
-      }
-    }, 0);
-  });
-
-  makeDraggable(parkingLotModal);
-  
-  // Ensure standup modal becomes semi-transparent immediately
-  standupModal.style.opacity = "0.6";
-  parkingLotModal.focus();
 }
 
 // Hide parking lot modal
 function hideParkingLotModal() {
-  if (parkingLotModal) {
-    parkingLotModal.style.display = "none";
-  }
+    if (parkingLotModal) {
+        parkingLotModal.style.display = "none";
+    }
 }
 
 // Setup parking lot modal event listeners
 function setupParkingLotEventListeners() {
-  // Close button
-  parkingLotModal
-    .querySelector("#closeParkingLotBtn")
-    .addEventListener("click", hideParkingLotModal);
+    // Close button
+    parkingLotModal
+        .querySelector("#closeParkingLotBtn")
+        .addEventListener("click", hideParkingLotModal);
 
-  // Add item button
-  parkingLotModal
-    .querySelector("#addParkingLotBtn")
-    .addEventListener("click", () => {
-      document.getElementById("addItemForm").style.display = "block";
-      document.getElementById("addParkingLotBtn").style.display = "none";
-      document.getElementById("parkingLotInput").focus();
-    });
+    // Add item button
+    parkingLotModal
+        .querySelector("#addParkingLotBtn")
+        .addEventListener("click", () => {
+            document.getElementById("addItemForm").style.display = "block";
+            document.getElementById("addParkingLotBtn").style.display = "none";
+            document.getElementById("parkingLotInput").focus();
+        });
 
-  // Save button
-  parkingLotModal
-    .querySelector("#saveItemBtn")
-    .addEventListener("click", saveParkingLotItem);
+    // Save button
+    parkingLotModal
+        .querySelector("#saveItemBtn")
+        .addEventListener("click", saveParkingLotItem);
 
-  // Cancel button
-  parkingLotModal
-    .querySelector("#cancelItemBtn")
-    .addEventListener("click", cancelAddItem);
+    // Cancel button
+    parkingLotModal
+        .querySelector("#cancelItemBtn")
+        .addEventListener("click", cancelAddItem);
 
-  // Enter key in input
-  parkingLotModal
-    .querySelector("#parkingLotInput")
-    .addEventListener("keypress", (e) => {
-      if (e.key === "Enter") {
-        saveParkingLotItem();
-      }
-    });
+    // Enter key in input
+    parkingLotModal
+        .querySelector("#parkingLotInput")
+        .addEventListener("keypress", (e) => {
+            if (e.key === "Enter") {
+                saveParkingLotItem();
+            }
+        });
 
-  // Setup remove item listeners
-  setupRemoveItemListeners();
+    // Setup remove item listeners
+    setupRemoveItemListeners();
 }
 
 // Save parking lot item
 function saveParkingLotItem() {
-  const input = document.getElementById("parkingLotInput");
-  const value = input.value.trim();
-  
-  if (value && !parkingLotItems.includes(value)) {
-    parkingLotItems.push(value);
-    refreshParkingLotList();
-  }
-  
-  cancelAddItem();
+    const input = document.getElementById("parkingLotInput");
+    const value = input.value.trim();
+
+    if (value && !parkingLotItems.includes(value)) {
+        parkingLotItems.push(value);
+        refreshParkingLotList();
+    }
+
+    cancelAddItem();
 }
 
 // Cancel add item
 function cancelAddItem() {
-  document.getElementById("addItemForm").style.display = "none";
-  document.getElementById("addParkingLotBtn").style.display = "block";
-  document.getElementById("parkingLotInput").value = "";
+    document.getElementById("addItemForm").style.display = "none";
+    document.getElementById("addParkingLotBtn").style.display = "block";
+    document.getElementById("parkingLotInput").value = "";
 }
 
 // Refresh parking lot list
 function refreshParkingLotList() {
-  const listContainer = parkingLotModal.querySelector("#parkingLotList");
-  listContainer.innerHTML = parkingLotItems.length === 0 ? 
-    '<div class="empty-parking-lot">No parking lot items yet</div>' :
-    parkingLotItems.map((item, index) => `
+    const listContainer = parkingLotModal.querySelector("#parkingLotList");
+    listContainer.innerHTML = parkingLotItems.length === 0 ?
+        '<div class="empty-parking-lot">No parking lot items yet</div>' :
+        parkingLotItems.map((item, index) => `
       <div class="standup-item parking-lot-item" data-item="${item}">
         <span class="standup-number">${index + 1}</span>
         <span class="standup-name">${item}</span>
         <button class="remove-item-btn" data-item="${item}">🗑️</button>
       </div>
     `).join('');
-  
-  setupRemoveItemListeners();
+
+    setupRemoveItemListeners();
 }
 
 // Setup remove item listeners
 function setupRemoveItemListeners() {
-  const removeButtons = parkingLotModal.querySelectorAll(".remove-item-btn");
-  removeButtons.forEach(button => {
-    button.addEventListener("click", (e) => {
-      const item = e.target.dataset.item;
-      parkingLotItems = parkingLotItems.filter(i => i !== item);
-      refreshParkingLotList();
+    const removeButtons = parkingLotModal.querySelectorAll(".remove-item-btn");
+    removeButtons.forEach(button => {
+        button.addEventListener("click", (e) => {
+            const item = e.target.dataset.item;
+            parkingLotItems = parkingLotItems.filter(i => i !== item);
+            refreshParkingLotList();
+        });
     });
-  });
 }
 
 // Make element draggable with boundary constraints
 function makeDraggable(element) {
-  let pos1 = 0,
-    pos2 = 0,
-    pos3 = 0,
-    pos4 = 0;
-  const header = element.querySelector(".standup-header");
+    let pos1 = 0,
+        pos2 = 0,
+        pos3 = 0,
+        pos4 = 0;
+    const header = element.querySelector(".standup-header");
 
-  header.onmousedown = dragMouseDown;
+    header.onmousedown = dragMouseDown;
 
-  function dragMouseDown(e) {
-    e = e || window.event;
-    e.preventDefault();
-    pos3 = e.clientX;
-    pos4 = e.clientY;
-    document.onmouseup = closeDragElement;
-    document.onmousemove = elementDrag;
-  }
+    function dragMouseDown(e) {
+        e = e || window.event;
+        e.preventDefault();
+        pos3 = e.clientX;
+        pos4 = e.clientY;
+        document.onmouseup = closeDragElement;
+        document.onmousemove = elementDrag;
+    }
 
-  function elementDrag(e) {
-    e = e || window.event;
-    e.preventDefault();
-    pos1 = pos3 - e.clientX;
-    pos2 = pos4 - e.clientY;
-    pos3 = e.clientX;
-    pos4 = e.clientY;
+    function elementDrag(e) {
+        e = e || window.event;
+        e.preventDefault();
+        pos1 = pos3 - e.clientX;
+        pos2 = pos4 - e.clientY;
+        pos3 = e.clientX;
+        pos4 = e.clientY;
 
-    // Calculate new position
-    let newTop = element.offsetTop - pos2;
-    let newLeft = element.offsetLeft - pos1;
+        // Calculate new position
+        let newTop = element.offsetTop - pos2;
+        let newLeft = element.offsetLeft - pos1;
 
-    // Get window dimensions
-    const windowWidth = window.innerWidth;
-    const windowHeight = window.innerHeight;
-    const elementWidth = element.offsetWidth;
-    const elementHeight = element.offsetHeight;
+        // Get window dimensions
+        const windowWidth = window.innerWidth;
+        const windowHeight = window.innerHeight;
+        const elementWidth = element.offsetWidth;
+        const elementHeight = element.offsetHeight;
 
-    // Constrain to screen boundaries
-    // Keep at least 20px of the element visible on each side
-    newLeft = Math.max(
-      20 - elementWidth + 100,
-      Math.min(newLeft, windowWidth - 100),
-    );
-    newTop = Math.max(0, Math.min(newTop, windowHeight - 60)); // Keep header visible
+        // Constrain to screen boundaries
+        // Keep at least 20px of the element visible on each side
+        newLeft = Math.max(
+            20 - elementWidth + 100,
+            Math.min(newLeft, windowWidth - 100),
+        );
+        newTop = Math.max(0, Math.min(newTop, windowHeight - 60)); // Keep header visible
 
-    element.style.top = newTop + "px";
-    element.style.left = newLeft + "px";
-  }
+        element.style.top = newTop + "px";
+        element.style.left = newLeft + "px";
+    }
 
-  function closeDragElement() {
-    document.onmouseup = null;
-    document.onmousemove = null;
-  }
+    function closeDragElement() {
+        document.onmouseup = null;
+        document.onmousemove = null;
+    }
 }
 
 // Collapse modal (hide list and footer)
 function collapseModal() {
-  if (standupModal) {
-    const list = standupModal.querySelector(".standup-list");
-    const footer = standupModal.querySelector(".standup-footer");
-    if (list) list.style.display = "none";
-    if (footer) footer.style.display = "none";
-    standupModal.classList.add("collapsed");
-  }
+    if (standupModal) {
+        const list = standupModal.querySelector(".standup-list");
+        const footer = standupModal.querySelector(".standup-footer");
+        if (list) list.style.display = "none";
+        if (footer) footer.style.display = "none";
+        standupModal.classList.add("collapsed");
+    }
 }
 
 // Expand modal (show list and footer)
 function expandModal() {
-  if (standupModal) {
-    const list = standupModal.querySelector(".standup-list");
-    const footer = standupModal.querySelector(".standup-footer");
-    if (list) list.style.display = "block";
-    if (footer) footer.style.display = "block";
-    standupModal.classList.remove("collapsed");
-  }
+    if (standupModal) {
+        const list = standupModal.querySelector(".standup-list");
+        const footer = standupModal.querySelector(".standup-footer");
+        if (list) list.style.display = "block";
+        if (footer) footer.style.display = "block";
+        standupModal.classList.remove("collapsed");
+    }
 }
 
 // Setup global click listener to handle clicks outside modals
 function setupGlobalClickListener() {
-  if (globalClickListenerAdded) return;
-  
-  document.addEventListener("click", (e) => {
-    // Check if click is outside both modals
-    const clickedOutsideStandup = standupModal && !standupModal.contains(e.target);
-    const clickedOutsideParkingLot = !parkingLotModal || !parkingLotModal.contains(e.target);
-    
-    // If clicked outside standup modal, collapse it
-    if (clickedOutsideStandup && clickedOutsideParkingLot) {
-      standupModal.style.opacity = "0.6";
-      collapseModal();
-    }
-    
-    // If clicked outside parking lot modal but inside standup, focus standup
-    if (clickedOutsideParkingLot && !clickedOutsideStandup) {
-      if (parkingLotModal && parkingLotModal.style.display !== "none") {
-        standupModal.style.opacity = "1";
-        expandModal();
-        standupModal.focus();
-      }
-    }
-  });
-  
-  globalClickListenerAdded = true;
+    if (globalClickListenerAdded) return;
+
+    document.addEventListener("click", (e) => {
+        // Check if click is outside both modals
+        const clickedOutsideStandup = standupModal && !standupModal.contains(e.target);
+        const clickedOutsideParkingLot = !parkingLotModal || !parkingLotModal.contains(e.target);
+
+        // If clicked outside standup modal, collapse it
+        if (clickedOutsideStandup && clickedOutsideParkingLot) {
+            standupModal.style.opacity = "0.6";
+            collapseModal();
+        }
+
+        // If clicked outside parking lot modal but inside standup, focus standup
+        if (clickedOutsideParkingLot && !clickedOutsideStandup) {
+            if (parkingLotModal && parkingLotModal.style.display !== "none") {
+                standupModal.style.opacity = "1";
+                expandModal();
+                standupModal.focus();
+            }
+        }
+    });
+
+    globalClickListenerAdded = true;
 }
 
 // Listen for messages from popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === "showModal") {
-    showModal();
-  } else if (request.action === "hideModal") {
-    hideModal();
-  }
+    if (request.action === "showModal") {
+        showModal();
+    } else if (request.action === "hideModal") {
+        hideModal();
+    }
 });
