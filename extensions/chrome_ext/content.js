@@ -399,6 +399,7 @@ function saveParkingLotItem() {
 function cancelAddItem() {
   parkingLotModal.querySelector("#addItemForm").style.display = "none";
   parkingLotModal.querySelector("#addParkingLotBtn").style.display = "block";
+  parkingLotModal.querySelector("#parkingLotWhoSelect").selectedIndex = 0;
   parkingLotModal.querySelector("#parkingLotWhyInput").value = "";
 }
 
