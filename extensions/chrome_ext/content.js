@@ -8,6 +8,7 @@ let globalClickListenerAdded = false;
 
 // Load names from file
 async function loadNames() {
+  if (namesData.length > 0) return namesData;
   try {
     const response = await fetch(chrome.runtime.getURL("names.txt"));
     const text = await response.text();
@@ -72,6 +73,7 @@ function createModal(names) {
 
 // Create the parking lot modal HTML
 function createParkingLotModal() {
+  const nameOptions = namesData.map(name => `<option value="${name}">${name}</option>`).join('');
   const modalHTML = `
     <div id="parkingLotModal" class="standup-modal-content parking-lot-modal">
       <div class="standup-header">
@@ -82,21 +84,19 @@ function createParkingLotModal() {
       </div>
       <div class="parking-lot-content">
         <div id="parkingLotList" class="standup-list">
-          ${parkingLotItems.length === 0 ? 
-            '<div class="empty-parking-lot">No parking lot items yet</div>' :
-            parkingLotItems.map((item, index) => `
-              <div class="standup-item parking-lot-item" data-item="${item}">
-                <span class="standup-number">${index + 1}</span>
-                <span class="standup-name">${item}</span>
-                <button class="remove-item-btn" data-item="${item}">🗑️</button>
-              </div>
-            `).join('')
-          }
+          <div class="empty-parking-lot">No parking lot items yet</div>
         </div>
         <div class="parking-lot-add-section">
           <button id="addParkingLotBtn" class="standup-btn add-item">+ Add Parking Lot Item</button>
           <div id="addItemForm" class="add-item-form" style="display: none;">
-            <input type="text" id="parkingLotInput" placeholder="Enter parking lot item..." maxlength="100">
+            <div class="form-row">
+              <label class="form-label">Who:</label>
+              <select id="parkingLotWhoSelect">${nameOptions}</select>
+            </div>
+            <div class="form-row">
+              <label class="form-label">Why:</label>
+              <input type="text" id="parkingLotWhyInput" placeholder="optional reason..." maxlength="100">
+            </div>
             <div class="form-buttons">
               <button id="saveItemBtn" class="standup-btn primary">Save</button>
               <button id="cancelItemBtn" class="standup-btn secondary">Cancel</button>
@@ -111,7 +111,6 @@ function createParkingLotModal() {
 
 // Show the modal
 async function showModal() {
-  console.log("standup modal: ", standupModal);
   if (standupModal && standupModal.style.display == "none") {
     standupModal.style.display = "block";
     return;
@@ -120,9 +119,6 @@ async function showModal() {
   const names = await loadNames();
   const shuffledNames = shuffleArray(names);
 
-  // Create modal element
-  // This roundabout process is most efficient way creating complex DOM
-  // elements from HTML templates string in vanilla JS
   const modalDiv = document.createElement("div");
   modalDiv.innerHTML = createModal(shuffledNames);
   standupModal = modalDiv.firstElementChild;
@@ -253,6 +249,19 @@ function setupCheckboxListeners() {
   });
 }
 
+// Open the add form with a name pre-selected (called from car button clicks)
+function openAddFormWithName(name) {
+  const form = parkingLotModal.querySelector("#addItemForm");
+  const btn = parkingLotModal.querySelector("#addParkingLotBtn");
+  const select = parkingLotModal.querySelector("#parkingLotWhoSelect");
+  const whyInput = parkingLotModal.querySelector("#parkingLotWhyInput");
+  form.style.display = "block";
+  btn.style.display = "none";
+  select.value = name;
+  whyInput.value = "";
+  whyInput.focus();
+}
+
 // Setup car button event listeners
 function setupCarButtonListeners() {
   const carButtons = standupModal.querySelectorAll(".parking-lot-car-btn");
@@ -260,28 +269,12 @@ function setupCarButtonListeners() {
     button.addEventListener("click", (e) => {
       e.stopPropagation(); // Prevent modal focus changes
       const name = e.target.dataset.name;
-      
-      // Add to parking lot if not already there
-      if (!parkingLotItems.includes(name)) {
-        parkingLotItems.push(name);
-        
-        // Add visual confirmation animation
-        button.classList.add("car-clicked");
-        setTimeout(() => {
-          button.classList.remove("car-clicked");
-        }, 600);
-        
-        // Update parking lot modal if it's open
-        if (parkingLotModal && parkingLotModal.style.display !== "none") {
-          refreshParkingLotList();
-        }
-      } else {
-        // Already in parking lot - show different animation
-        button.classList.add("car-already-added");
-        setTimeout(() => {
-          button.classList.remove("car-already-added");
-        }, 400);
-      }
+
+      button.classList.add("car-clicked");
+      setTimeout(() => button.classList.remove("car-clicked"), 600);
+
+      showParkingLotModal();
+      openAddFormWithName(name);
     });
   });
 }
@@ -365,9 +358,9 @@ function setupParkingLotEventListeners() {
   parkingLotModal
     .querySelector("#addParkingLotBtn")
     .addEventListener("click", () => {
-      document.getElementById("addItemForm").style.display = "block";
-      document.getElementById("addParkingLotBtn").style.display = "none";
-      document.getElementById("parkingLotInput").focus();
+      parkingLotModal.querySelector("#addItemForm").style.display = "block";
+      parkingLotModal.querySelector("#addParkingLotBtn").style.display = "none";
+      parkingLotModal.querySelector("#parkingLotWhyInput").focus();
     });
 
   // Save button
@@ -380,9 +373,9 @@ function setupParkingLotEventListeners() {
     .querySelector("#cancelItemBtn")
     .addEventListener("click", cancelAddItem);
 
-  // Enter key in input
+  // Enter key in why input
   parkingLotModal
-    .querySelector("#parkingLotInput")
+    .querySelector("#parkingLotWhyInput")
     .addEventListener("keypress", (e) => {
       if (e.key === "Enter") {
         saveParkingLotItem();
@@ -395,37 +388,36 @@ function setupParkingLotEventListeners() {
 
 // Save parking lot item
 function saveParkingLotItem() {
-  const input = document.getElementById("parkingLotInput");
-  const value = input.value.trim();
-  
-  if (value && !parkingLotItems.includes(value)) {
-    parkingLotItems.push(value);
-    refreshParkingLotList();
-  }
-  
+  const who = parkingLotModal.querySelector("#parkingLotWhoSelect").value;
+  const why = parkingLotModal.querySelector("#parkingLotWhyInput").value.trim();
+  parkingLotItems.push({ who, why });
+  refreshParkingLotList();
   cancelAddItem();
 }
 
 // Cancel add item
 function cancelAddItem() {
-  document.getElementById("addItemForm").style.display = "none";
-  document.getElementById("addParkingLotBtn").style.display = "block";
-  document.getElementById("parkingLotInput").value = "";
+  parkingLotModal.querySelector("#addItemForm").style.display = "none";
+  parkingLotModal.querySelector("#addParkingLotBtn").style.display = "block";
+  parkingLotModal.querySelector("#parkingLotWhyInput").value = "";
 }
 
 // Refresh parking lot list
 function refreshParkingLotList() {
   const listContainer = parkingLotModal.querySelector("#parkingLotList");
-  listContainer.innerHTML = parkingLotItems.length === 0 ? 
+  listContainer.innerHTML = parkingLotItems.length === 0 ?
     '<div class="empty-parking-lot">No parking lot items yet</div>' :
-    parkingLotItems.map((item, index) => `
-      <div class="standup-item parking-lot-item" data-item="${item}">
-        <span class="standup-number">${index + 1}</span>
-        <span class="standup-name">${item}</span>
-        <button class="remove-item-btn" data-item="${item}">🗑️</button>
-      </div>
-    `).join('');
-  
+    parkingLotItems.map((item, index) => {
+      const label = item.why ? `${item.who}: ${item.why}` : item.who;
+      return `
+        <div class="standup-item parking-lot-item">
+          <span class="standup-number">${index + 1}</span>
+          <span class="standup-name">${label}</span>
+          <button class="remove-item-btn" data-index="${index}">🗑️</button>
+        </div>
+      `;
+    }).join('');
+
   setupRemoveItemListeners();
 }
 
@@ -434,8 +426,8 @@ function setupRemoveItemListeners() {
   const removeButtons = parkingLotModal.querySelectorAll(".remove-item-btn");
   removeButtons.forEach(button => {
     button.addEventListener("click", (e) => {
-      const item = e.target.dataset.item;
-      parkingLotItems = parkingLotItems.filter(i => i !== item);
+      const index = parseInt(e.target.dataset.index);
+      parkingLotItems.splice(index, 1);
       refreshParkingLotList();
     });
   });
