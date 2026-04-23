@@ -300,6 +300,7 @@ function setupCarButtonListeners() {
             showParkingLotModal();
             openAddFormWithName(name);
         });
+    });
 }
 
 // Hide the modal
@@ -454,6 +455,7 @@ function setupRemoveItemListeners() {
             parkingLotItems.splice(index, 1);
             refreshParkingLotList();
         });
+    });
 }
 
 // Make element draggable with boundary constraints
