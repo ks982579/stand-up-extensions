@@ -9,7 +9,7 @@
 ⚙️ Settings page - Easy UI to add/remove team members
 🔄 Reshuffle button - Generate a new random order anytime
 🎨 Draggable modal - Drag it around the screen so it doesn't block your Jira board
-🚗 Parking Lot - Adding others to a Parking Lot is easy with the button
+🚗 Parking Lot - Track topics to revisit after standup, each with an optional reason
 ☁️ Storage options - Choose between local-only or cloud-synced storage
 
 ## How to use:
@@ -27,6 +27,14 @@
 4. Check off people as they finish their standup updates
 5. Click "Reshuffle" for a new random order anytime
 6. Use the 🚗 button to add items to the Parking Lot
+
+### Parking Lot:
+- Click the 🚗 button next to a name to add them to the Parking Lot — the modal opens with their name pre-selected and the cursor in the reason field
+- Type an optional reason and click Save (or press Enter), or leave it blank and just save the name
+- The same person can have multiple entries with different reasons
+- Click "View Parking Lot" in the footer or use the 🚗 button to open the Parking Lot modal directly
+- Click "+ Add Parking Lot Item" inside the Parking Lot modal to add an entry manually
+- Remove individual entries with the 🗑️ button
 
 ### Managing Team Members:
 Right-click the extension icon → "Options" to add or remove team members.
